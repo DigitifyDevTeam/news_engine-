@@ -1,0 +1,16 @@
+Django>=4.2,<5.1
+djangorestframework>=3.14
+django-filter>=23.0
+django-environ>=0.11.0
+psycopg[binary]>=3.1
+celery[redis]>=5.3
+# Redis is required as the message broker and/or result backend for Celery task queue,
+# enabling distributed task management and real-time data handling in Django.
+redis>=5.0
+playwright>=1.40
+trafilatura>=1.6
+tiktoken>=0.5
+PyYAML>=6.0
+requests>=2.31
+gunicorn>=21.0
+reportlab>=4.0

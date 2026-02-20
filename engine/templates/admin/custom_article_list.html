@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Articles Admin - News Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">Articles Admin</h1>
+                        <span class="ml-4 text-sm text-gray-500">Total: {{ total_count }} articles</span>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/admin/" class="text-blue-600 hover:text-blue-800">← Retour à l'admin</a>
+                        <a href="/" class="text-blue-600 hover:text-blue-800">Accueil</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <form method="GET" class="flex items-center space-x-4">
+                    <input type="text" 
+                           name="q" 
+                           value="{{ search_query }}"
+                           placeholder="Rechercher un article..." 
+                           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Rechercher
+                    </button>
+                    {% if search_query %}
+                        <a href="?" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                            Effacer
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+
+        <!-- Articles List -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titre</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statut</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mots</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Créé</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for article in articles %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    <a href="{{ article.url }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                                        {{ article.title|truncatechars:80 }}
+                                    </a>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-900">{{ article.source.name }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                    {% if article.processing_status == 'chunked' %}bg-green-100 text-green-800
+                                    {% elif article.processing_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% elif article.processing_status == 'extracted' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-red-100 text-red-800{% endif %}">
+                                    {{ article.get_processing_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ article.word_count }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ article.created_at|date:"d/m/Y H:i" }}
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium">
+                                <a href="/admin/articles/article/{{ article.id }}/change/" 
+                                   class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                    Modifier
+                                </a>
+                                <a href="{{ article.url }}" target="_blank" class="text-gray-600 hover:text-gray-900">
+                                    Voir
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                {% if search_query %}
+                                    Aucun article trouvé pour "{{ search_query }}"
+                                {% else %}
+                                    Aucun article disponible
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if articles.has_other_pages %}
+            <div class="mt-6 flex justify-center">
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {% if articles.has_previous %}
+                        <a href="?page={{ articles.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Précédent
+                        </a>
+                    {% endif %}
+                    
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                        Page {{ articles.number }} sur {{ articles.paginator.num_pages }}
+                    </span>
+                    
+                    {% if articles.has_next %}
+                        <a href="?page={{ articles.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            Suivant
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

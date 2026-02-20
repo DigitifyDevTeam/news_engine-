@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Engine — Tableau de bord</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold tracking-tight text-slate-900">News Engine</h1>
+      <p class="mt-2 text-slate-600">
+        Plateforme d’intelligence marché pour l’écosystème numérique français (focus Lyon).
+      </p>
+    </header>
+
+    <!-- High-level stats -->
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-medium text-slate-500 uppercase">Sources</p>
+        <p class="mt-2 text-2xl font-semibold">{{ sources_count }}</p>
+        <p class="mt-1 text-xs text-slate-500">Sites / flux surveillés</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-medium text-slate-500 uppercase">Articles</p>
+        <p class="mt-2 text-2xl font-semibold">{{ articles_count }}</p>
+        <p class="mt-1 text-xs text-slate-500">Contenus bruts nettoyés</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-medium text-slate-500 uppercase">Signaux</p>
+        <p class="mt-2 text-2xl font-semibold">{{ signals_count }}</p>
+        <p class="mt-1 text-xs text-slate-500">Signaux actionnables extraits</p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+        <p class="text-xs font-medium text-slate-500 uppercase">Rapports hebdo</p>
+        <p class="mt-2 text-2xl font-semibold">{{ reports_count }}</p>
+        <p class="mt-1 text-xs text-slate-500">Synthèses exécutives générées</p>
+      </div>
+    </section>
+
+    <!-- Pipeline overview -->
+    <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-900 mb-4">Processus complet</h2>
+      <ol class="grid gap-4 md:grid-cols-4 text-sm">
+        <li class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-semibold">1</span>
+            <span class="font-medium">Sources</span>
+          </div>
+          <p class="text-slate-600">
+            Définir les sites, flux RSS et pages de veille (Lyon, agences, outils, etc.).
+          </p>
+          <a href="{% url 'sources_page' %}" class="inline-flex mt-1 text-xs font-medium text-slate-900 hover:text-slate-700">
+            Gérer les sources →
+          </a>
+        </li>
+        <li class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-semibold">2</span>
+            <span class="font-medium">Scraping &amp; normalisation</span>
+          </div>
+          <p class="text-slate-600">
+            Playwright + Trafilatura pour extraire le texte propre de chaque article.
+          </p>
+          <p class="mt-1 text-xs text-slate-500">
+            Depuis les sources : bouton <strong>Scrape</strong> par site.
+          </p>
+        </li>
+        <li class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-semibold">3</span>
+            <span class="font-medium">Extraction de signaux</span>
+          </div>
+          <p class="text-slate-600">
+            Découpage en chunks + LLaMA 3.1 pour détecter besoins, risques, opportunités, mouvements concurrents.
+          </p>
+        </li>
+        <li class="flex flex-col gap-2">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-white text-xs font-semibold">4</span>
+            <span class="font-medium">Rapport hebdo</span>
+          </div>
+          <p class="text-slate-600">
+            Synthèse exéc utive structurée (8 sections) prête pour la direction et les équipes commerciales.
+          </p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Actions + chatbot + recent activity -->
+    <section class="grid gap-6 lg:grid-cols-3">
+      <!-- Actions -->
+      <div class="lg:col-span-1 flex flex-col gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3">Actions rapides</h3>
+          <div class="flex flex-col gap-3 text-sm">
+            <a href="{% url 'signals_page' %}" class="inline-flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-900 text-white font-medium hover:bg-slate-800">
+              Signaux
+              <span class="text-xs opacity-80">Manuel &amp; prompts</span>
+            </a>
+            <a href="{% url 'sources_page' %}" class="inline-flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-100 text-slate-900 font-medium hover:bg-slate-200">
+              Gérer les sources &amp; scraping
+              <span class="text-xs text-slate-500">Sources &amp; articles</span>
+            </a>
+            <form id="run-full-pipeline" class="inline-flex flex-col gap-1">
+              {% csrf_token %}
+              <button type="button" id="run-full-pipeline-btn"
+                      class="inline-flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-100 text-slate-900 font-medium hover:bg-slate-200">
+                Lancer le pipeline complet
+                <span class="text-xs text-slate-500">Articles stockés → Signaux → PDF (date du jour)</span>
+              </button>
+              <p id="run-full-pipeline-msg" class="text-xs text-slate-500"></p>
+            </form>
+            <a href="/api/reports/" class="inline-flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-100 text-slate-900 font-medium hover:bg-slate-200">
+              Consulter les rapports
+              <span class="text-xs text-slate-500">API / DRF</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Simple LLM chatbot to test the local model -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3">Chatbot LLM — Test rapide</h3>
+          <p class="text-xs text-slate-500 mb-3">
+            Utilise LLaMA 3.1 local via Ollama. Idéal pour vérifier rapidement que le modèle répond bien.
+          </p>
+          <div id="chat-window" class="h-40 overflow-y-auto border border-slate-100 rounded-xl p-2 mb-3 bg-slate-50 text-xs space-y-1">
+            <!-- Messages will be injectés ici -->
+          </div>
+          <form id="chat-form" class="flex flex-col gap-2">
+            <textarea id="chat-input" rows="2" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900" placeholder="Posez une question sur le marché numérique lyonnais…"></textarea>
+            <div class="flex items-center justify-between gap-2">
+              <button type="submit" id="chat-send" class="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-medium hover:bg-slate-800">
+                Envoyer
+              </button>
+              <p id="chat-status" class="text-[11px] text-slate-500"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Recent runs + reports -->
+      <div class="lg:col-span-2 flex flex-col gap-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3">Dernières exécutions de pipeline</h3>
+          {% if latest_runs %}
+          <div class="overflow-x-auto text-sm">
+            <table class="w-full">
+              <thead class="border-b border-slate-200 text-slate-500">
+                <tr>
+                  <th class="py-1.5 pr-4 text-left">Type</th>
+                  <th class="py-1.5 pr-4 text-left">Statut</th>
+                  <th class="py-1.5 pr-4 text-left">Démarré</th>
+                  <th class="py-1.5 pr-4 text-left">Articles</th>
+                  <th class="py-1.5 pr-4 text-left">Signaux</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for run in latest_runs %}
+                <tr class="border-b border-slate-100">
+                  <td class="py-1.5 pr-4 capitalize text-slate-800">{{ run.run_type }}</td>
+                  <td class="py-1.5 pr-4 text-slate-600">{{ run.status }}</td>
+                  <td class="py-1.5 pr-4 text-slate-500">{{ run.started_at|date:"d/m/Y H:i" }}</td>
+                  <td class="py-1.5 pr-4 text-slate-500">{{ run.articles_scraped }}</td>
+                  <td class="py-1.5 pr-4 text-slate-500">{{ run.signals_extracted }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-sm text-slate-500">Aucune exécution de pipeline enregistrée pour l’instant.</p>
+          {% endif %}
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+          <h3 class="text-sm font-semibold text-slate-900 mb-3">Derniers rapports hebdomadaires</h3>
+          {% if latest_reports %}
+          <ul class="space-y-2 text-sm">
+            {% for r in latest_reports %}
+            <li class="flex items-center justify-between border border-slate-100 rounded-xl px-3 py-2">
+              <div>
+                <p class="font-medium text-slate-900">
+                  Semaine du {{ r.week_start|date:"d/m/Y" }} au {{ r.week_end|date:"d/m/Y" }}
+                  {% if forloop.first %}<span class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Nouveau!</span>{% endif %}
+                </p>
+                <p class="text-xs text-slate-500">
+                  {{ r.signal_count }} signaux · {{ r.source_count }} sources · statut : {{ r.status }}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                {% if r.signal_count > 0 %}
+                <a href="{% url 'download_report_pdf' r.id %}" 
+                   class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                  📄 PDF
+                </a>
+                {% else %}
+                <span class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-400">
+                  📄 PDF (vide)
+                </span>
+                {% endif %}
+                <a href="/api/reports/{{ r.id }}/" class="text-xs font-medium text-slate-900 hover:text-slate-700">
+                  API →
+                </a>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-sm text-slate-500">Aucun rapport hebdomadaire généré pour l'instant.</p>
+          {% endif %}
+          
+          {% if latest_reports %}
+          <div class="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="text-xs text-blue-800">
+              <strong>💡 Astuce:</strong> Les rapports sont générés automatiquement après chaque pipeline. 
+              Si vous ne voyez pas le dernier rapport, actualisez la page.
+            </p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById('run-full-pipeline-btn');
+      var msg = document.getElementById('run-full-pipeline-msg');
+      var tokenInput = document.querySelector('#run-full-pipeline [name=csrfmiddlewaretoken]');
+
+          if (!btn || !msg || !tokenInput) return;
+
+          var pollInterval = null;
+          function stopPolling() {
+            if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+          }
+
+          function pollRun(runId) {
+            fetch('/api/pipeline/runs/' + runId + '/', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
+              .then(function (r) { return r.json().catch(function () { return {}; }); })
+              .then(function (data) {
+                var runStatus = data.status || '';
+                var pct = data.progress_percent != null ? data.progress_percent : 0;
+                var text = data.progress_message || ('En cours… ' + pct + '%');
+                var bar = '<div class="w-full bg-slate-200 rounded-full h-3 mt-1 mb-1"><div class="bg-blue-600 h-3 rounded-full transition-all" style="width:' + pct + '%"></div></div>';
+                msg.innerHTML = '<span class="text-blue-600 font-medium">Pipeline en cours</span> ' + bar + '<small>' + text + '</small>';
+                if (runStatus === 'completed') {
+                  stopPolling();
+                  var reportLink = '';
+                  if (data.report_id) {
+                    reportLink = '<a href="/reports/' + data.report_id + '/pdf/" class="inline-flex items-center gap-1 px-3 py-1 mt-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700">Telecharger le PDF</a>';
+                  }
+                  msg.innerHTML = '<span class="text-green-600 font-medium">Pipeline termine (' + (data.signals_extracted || 0) + ' signaux)</span>' + bar.replace('bg-blue-600 h-3', 'bg-green-500 h-3') + '<small>' + text + '</small><br>' + reportLink + ' <a href="javascript:location.reload()" class="text-blue-600 underline text-xs ml-2">Actualiser la page</a>';
+                  btn.disabled = false;
+                } else if (runStatus === 'failed') {
+                  stopPolling();
+                  msg.innerHTML = '<span class="text-red-600 font-medium">Pipeline en echec</span><br><small>' + (data.error_log && data.error_log.length ? data.error_log.join(' ') : 'Voir les logs serveur.') + '</small>';
+                  btn.disabled = false;
+                }
+              })
+              .catch(function () {});
+          }
+
+          btn.addEventListener('click', function () {
+            btn.disabled = true;
+            msg.innerHTML = '<span class="text-blue-600">🚀 Lancement du pipeline…</span><br><small>Articles stockés → signaux → PDF</small>';
+
+            fetch('/api/pipeline/runs/run/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': tokenInput.value,
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({ run_type: 'full' }),
+              credentials: 'same-origin'
+            })
+              .then(function (r) {
+                return r.json().catch(function () { return {}; }).then(function (data) {
+                  return { ok: r.ok, status: r.status, data: data };
+                });
+              })
+              .then(function (res) {
+                if (res.ok && res.data.processing_run_id) {
+                  msg.innerHTML = '<span class="text-blue-600">🔄 Pipeline en cours</span><br><strong>0%</strong> — Extraction des signaux…';
+                  pollInterval = setInterval(function () { pollRun(res.data.processing_run_id); }, 2500);
+                  pollRun(res.data.processing_run_id);
+                } else if (res.ok) {
+                  msg.innerHTML = '<span class="text-green-600">✅ Pipeline lancé</span><br><small>Task ID: ' + (res.data.task_id || 'N/A') + '</small><br><a href="javascript:location.reload()" class="text-blue-600 underline text-xs">Actualiser</a>';
+                  btn.disabled = false;
+                } else {
+                  msg.innerHTML = '<span class="text-red-600">❌ Échec du lancement</span><br><small>' + (res.data.error || res.data.detail || 'Erreur HTTP ' + res.status) + '</small>';
+                  btn.disabled = false;
+                }
+              })
+              .catch(function (err) {
+                console.error('Pipeline launch error:', err);
+                msg.innerHTML = '<span class="text-red-600">🌐 Erreur réseau</span><br><small>Vérifiez votre connexion et réessayez.</small>';
+                btn.disabled = false;
+              });
+          });
+        })();
+
+        // Very lightweight chat client for LLM test endpoint.
+        (function () {
+          var form = document.getElementById('chat-form');
+          var input = document.getElementById('chat-input');
+          var windowEl = document.getElementById('chat-window');
+          var statusEl = document.getElementById('chat-status');
+          var sendBtn = document.getElementById('chat-send');
+          var tokenInput = document.querySelector('#run-full-pipeline [name=csrfmiddlewaretoken]');
+
+          if (!form || !input || !windowEl || !statusEl || !sendBtn || !tokenInput) return;
+
+          function appendMessage(role, text) {
+            var line = document.createElement('div');
+            line.className = role === 'user' ? 'text-slate-900' : 'text-slate-700';
+            line.textContent = (role === 'user' ? 'Vous: ' : 'LLM: ') + text;
+            windowEl.appendChild(line);
+            windowEl.scrollTop = windowEl.scrollHeight;
+          }
+
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var message = (input.value || '').trim();
+            if (!message) return;
+
+            appendMessage('user', message);
+            input.value = '';
+            statusEl.textContent = 'Appel du modèle…';
+            sendBtn.disabled = true;
+
+            fetch('/chat/', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': tokenInput.value,
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({ message: message }),
+              credentials: 'same-origin'
+            })
+              .then(function (r) {
+                return r.json().catch(function () { return {}; }).then(function (data) {
+                  return { ok: r.ok, status: r.status, data: data };
+                });
+              })
+              .then(function (res) {
+                if (res.ok && res.data && res.data.reply) {
+                  appendMessage('assistant', res.data.reply);
+                  statusEl.textContent = '';
+                } else {
+                  var errMsg = (res.data && res.data.error) ? res.data.error : 'Erreur (' + res.status + ')';
+                  appendMessage('assistant', '[Erreur] ' + errMsg);
+                  statusEl.textContent = 'Erreur lors de l’appel du modèle.';
+                }
+              })
+              .catch(function (err) {
+                console.error(err);
+                appendMessage('assistant', '[Erreur réseau] Impossible d’appeler le modèle.');
+                statusEl.textContent = 'Erreur réseau.';
+              })
+              .finally(function () {
+                sendBtn.disabled = false;
+              });
+          });
+        })();
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Engine — Sources &amp; scraped content</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+  <div id="toast" class="fixed top-4 right-4 z-50 max-w-sm hidden rounded-lg shadow-lg px-4 py-3 text-sm font-medium transition-opacity duration-300"></div>
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <header class="mb-8">
+      <h1 class="text-2xl font-bold text-slate-900">News Engine</h1>
+      <p class="text-slate-600 mt-1">Add URL sources, scrape content, export as text.</p>
+    </header>
+
+    {% if messages %}
+    <ul class="mb-6 space-y-2">
+      {% for message in messages %}
+      <li class="px-4 py-2 rounded-lg
+        {% if message.tags == 'error' %}bg-red-100 text-red-800
+        {% elif message.tags == 'warning' %}bg-amber-100 text-amber-900
+        {% else %}bg-emerald-100 text-emerald-800{% endif %}">
+        {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-900 mb-4">Add a source URL</h2>
+      <form action="{% url 'add_source' %}" method="post" class="flex flex-wrap gap-3 items-end">
+        {% csrf_token %}
+        <div class="flex-1 min-w-[200px]">
+          <label for="name" class="block text-sm font-medium text-slate-700 mb-1">Name (optional)</label>
+          <input type="text" id="name" name="name" placeholder="e.g. My Blog"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
+        </div>
+        <div class="flex-[2] min-w-[280px]">
+          <label for="url" class="block text-sm font-medium text-slate-700 mb-1">URL <span class="text-red-500">*</span></label>
+          <input type="url" id="url" name="url" required placeholder="https://example.com"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
+        </div>
+        <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded-lg font-medium hover:bg-slate-700 focus:ring-2 focus:ring-slate-500 focus:ring-offset-2">
+          Add source
+        </button>
+      </form>
+      <p class="text-sm text-slate-500 mt-2">New sources use Trafilatura by default. Scrape from the table below.</p>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <h2 class="text-lg font-semibold text-slate-900 mb-4">Sources</h2>
+      {% if sources %}
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-200 text-left text-slate-600">
+              <th class="pb-2 pr-4">Name</th>
+              <th class="pb-2 pr-4">URL</th>
+              <th class="pb-2 pr-4">Last scraped</th>
+              <th class="pb-2">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sources %}
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+              <td class="py-3 pr-4 font-medium">{{ s.name }}</td>
+              <td class="py-3 pr-4 break-all text-slate-600">{{ s.url }}</td>
+              <td class="py-3 pr-4 text-slate-500">{{ s.last_scraped_at|date:"d/m/Y H:i"|default:"—" }}</td>
+              <td class="py-3">
+                <form method="post" action="{% url 'scrape_source' s.id %}" class="inline">
+                  {% csrf_token %}
+                  <button type="submit" class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-colors">
+                    Scrape
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-slate-500">No sources yet. Add one above.</p>
+      {% endif %}
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900">Scraped articles</h2>
+        <div class="flex gap-2">
+          <a href="/export.txt" class="inline-flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700">
+            Download all as .txt
+          </a>
+          {% if sources %}
+          <select id="export-source" class="rounded-lg border border-slate-300 px-3 py-2 text-sm">
+            <option value="">All sources</option>
+            {% for s in sources %}
+            <option value="{{ s.id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="button" id="export-btn" class="px-4 py-2 bg-slate-600 text-white rounded-lg text-sm font-medium hover:bg-slate-500">
+            Export selected
+          </button>
+          {% endif %}
+        </div>
+      </div>
+      {% if articles %}
+      <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-white border-b border-slate-200">
+            <tr class="text-left text-slate-600">
+              <th class="pb-2 pr-4">Title</th>
+              <th class="pb-2 pr-4">Source</th>
+              <th class="pb-2 pr-4">Words</th>
+              <th class="pb-2">Scraped</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in articles %}
+            <tr class="border-b border-slate-100 hover:bg-slate-50">
+              <td class="py-2 pr-4 font-medium max-w-xs truncate" title="{{ a.title }}">{{ a.title }}</td>
+              <td class="py-2 pr-4 text-slate-600">{{ a.source.name }}</td>
+              <td class="py-2 pr-4 text-slate-500">{{ a.word_count }}</td>
+              <td class="py-2 text-slate-500">{{ a.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-slate-500 text-sm mt-2">Showing up to 200 most recent. Use “Download as .txt” for full content.</p>
+      {% else %}
+      <p class="text-slate-500">No scraped articles yet. Add a source and click “Scrape”.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <script>
+    (function () {
+      var exportBtn = document.getElementById('export-btn');
+      var exportSelect = document.getElementById('export-source');
+      if (exportBtn && exportSelect) {
+        exportBtn.addEventListener('click', function () {
+          var sid = exportSelect.value;
+          window.location.href = sid ? '/export.txt?source_id=' + encodeURIComponent(sid) : '/export.txt';
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

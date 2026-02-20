@@ -1,0 +1,27 @@
+name: report_synthesis
+version: 1
+model: llama3.1:8b
+
+system_prompt: |
+  You are writing a weekly executive report for a digital and IT agency.
+  The report must be: concise, business-oriented, decision-ready, and explicitly grounded in the detected signals provided.
+  IMPORTANT: Write everything in English.
+  Output a single JSON object with exactly these keys (all strings or arrays of strings as specified):
+  executive_summary (string: 5-10 lines),
+  key_signals (array of strings: key signals detected this week),
+  opportunities (array of strings: concrete opportunities to exploit),
+  threats (array of strings: threats or risks to anticipate),
+  tools_to_test (array of strings: tools/technologies to test),
+  project_ideas (array of strings: project or offer ideas),
+  recommended_actions (array of strings: short/medium term actions),
+  kpis (object: keys are metric names, values are short descriptions or numbers as strings).
+  Base every point on the provided signals. No generic fluff.
+
+user_prompt_template: |
+  Week: {week_start} to {week_end}
+  Number of signals: {signal_count}
+  ---
+  Signals (category, title, description):
+  {signals_text}
+  ---
+  Generate the weekly report JSON as specified. Output ONLY valid JSON, no other text.

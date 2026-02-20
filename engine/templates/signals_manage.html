@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Engine — Signaux</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] } } }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <header class="mb-4 flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Signaux</h1>
+        <p class="mt-1 text-slate-600 text-sm">
+          Choisissez une méthode : ajout manuel (CRUD) ou prompts professionnels pour extraction automatisée.
+        </p>
+      </div>
+      <a href="{% url 'home_page' %}" class="text-xs font-medium text-slate-500 hover:text-slate-700">
+        ← Retour au tableau de bord
+      </a>
+    </header>
+
+    <div class="mb-6 inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
+      <button type="button"
+              id="tab-manual"
+              class="px-3 py-1.5 rounded-lg bg-white text-slate-900 shadow-sm">
+        Méthode 1 — Manuelle
+      </button>
+      <button type="button"
+              id="tab-prompt"
+              class="px-3 py-1.5 rounded-lg text-slate-600">
+        Méthode 2 — Prompts pro
+      </button>
+    </div>
+
+    {% if messages %}
+    <ul class="mb-4 space-y-2">
+      {% for message in messages %}
+      <li class="px-4 py-2 rounded-lg text-sm {% if message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-emerald-100 text-emerald-800{% endif %}">
+        {{ message }}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <!-- Manual signals / CRUD -->
+      <section id="mode-manual" class="flex flex-col gap-4">
+        <!-- Add manual signal (simple text only) -->
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-4 w-full col-span-full">
+          <h2 class="text-sm font-semibold text-slate-900 mb-2">Méthode 1 — Signaux manuels</h2>
+          <p class="text-sm text-slate-600 mb-3">
+            Ajoutez des signaux sous forme de texte libre (idées, observations, retours clients…). Un seul champ, pas de structure imposée.
+          </p>
+          <form method="post" action="{% url 'save_simple_note' %}" class="space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="note_id" id="note-id">
+            <div>
+              <label for="note-content" class="block text-xs font-medium text-slate-700 mb-1">
+                Signal (texte libre)<span class="text-red-500">*</span>
+              </label>
+              <textarea id="note-content" name="content" required rows="4"
+                        class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-400 focus:border-slate-400"
+                        placeholder="Écrivez ici votre signal, idée ou observation..."></textarea>
+              <p class="mt-1 text-xs text-slate-500">
+                Le titre interne sera dérivé automatiquement de la première ligne de ce texte.
+              </p>
+            </div>
+            <div class="flex items-center justify-end gap-3">
+              <button type="reset"
+                      class="inline-flex items-center px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                      onclick="document.getElementById('note-id').value='';">
+                Nouveau signal
+              </button>
+              <button type="submit"
+                      class="inline-flex items-center px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700">
+                Enregistrer le signal
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- List of manual signals -->
+        <section class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <h2 class="text-sm font-semibold text-slate-900 mb-3">Signaux manuels</h2>
+          {% if simple_notes %}
+          <div class="overflow-x-auto text-sm">
+            <table class="w-full">
+              <thead class="border-b border-slate-200 text-slate-500">
+                <tr>
+                  <th class="py-1.5 pr-4 text-left">Signal</th>
+                  <th class="py-1.5 pr-4 text-left">Créé le</th>
+                  <th class="py-1.5 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for note in simple_notes %}
+                <tr class="border-b border-slate-100 hover:bg-slate-50">
+                  <td class="py-2 pr-4 text-slate-800 max-w-md">
+                    {{ note.content|truncatechars:140 }}
+                  </td>
+                  <td class="py-2 pr-4 text-slate-500 text-xs">
+                    {{ note.created_at|date:"d/m/Y H:i" }}
+                  </td>
+                  <td class="py-2 text-xs">
+                    <div class="inline-flex items-center gap-1">
+                      <button type="button"
+                              class="px-2 py-1 rounded-lg border border-slate-200 text-[11px] text-slate-700 hover:bg-slate-50"
+                              onclick="fillNoteForm({{ note.id }}, '{{ note.content|escapejs }}');">
+                        Éditer
+                      </button>
+                      <form method="post" action="{% url 'delete_simple_note' note.id %}" class="inline" onsubmit="return confirm('Supprimer ce signal ?');">
+                        {% csrf_token %}
+                        <button type="submit"
+                                class="px-2 py-1 rounded-lg border border-red-200 text-[11px] text-red-700 hover:bg-red-50">
+                          Suppr.
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <p class="text-sm text-slate-500">Aucun signal manuel pour l’instant.</p>
+          {% endif %}
+        </section>
+      </section>
+
+      <!-- Professional prompts -->
+      <section id="mode-prompt" class="hidden bg-white rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col gap-4">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">Méthode 2 — Prompts professionnels</h2>
+          <p class="text-sm text-slate-600">
+            Définissez des prompts complets pour LLaMA 3.1 (extraction de signaux, scoring, clustering…).
+            Ces prompts sont stockés comme modèles réutilisables.
+          </p>
+        </div>
+
+        <form method="post" action="{% url 'save_prompt_template' %}" class="space-y-3">
+          {% csrf_token %}
+          <div>
+            <label for="name" class="block text-xs font-medium text-slate-700 mb-1">Nom du prompt<span class="text-red-500">*</span></label>
+            <input type="text" id="name" name="name" required
+                   placeholder="signal_extraction_custom_v1"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
+          </div>
+          <div>
+            <label for="purpose" class="block text-xs font-medium text-slate-700 mb-1">Objectif (optionnel)</label>
+            <input type="text" id="purpose" name="purpose"
+                   placeholder="Extraction de signaux pour SaaS B2B, Lyon"
+                   class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-400 focus:border-slate-400">
+          </div>
+          <div>
+            <label for="body" class="block text-xs font-medium text-slate-700 mb-1">Prompt complet<span class="text-red-500">*</span></label>
+            <textarea id="body" name="body" required rows="10"
+                      placeholder="Vous êtes un analyste marché senior pour une agence digitale basée à Lyon..."
+                      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:ring-2 focus:ring-slate-400 focus:border-slate-400 font-mono"></textarea>
+            <p class="mt-1 text-xs text-slate-500">
+              Ce texte sera envoyé tel quel au modèle (généralement comme system template). Gardez-le déterministe et orienté business.
+            </p>
+          </div>
+          <div class="flex items-center justify-end gap-3">
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700">
+              Enregistrer le prompt
+            </button>
+          </div>
+        </form>
+
+        {% if prompts %}
+        <div class="border-t border-slate-100 pt-3">
+          <h3 class="text-xs font-semibold text-slate-700 mb-2">Prompts existants</h3>
+          <ul class="space-y-1 text-xs text-slate-600">
+            {% for p in prompts %}
+            <li class="flex items-center justify-between gap-2 border border-slate-100 rounded-lg px-2 py-1.5">
+              <div class="truncate">
+                <span class="font-medium text-slate-900 truncate">{{ p.name }}</span>
+                {% if p.purpose %}
+                  <span class="ml-1 text-slate-500 truncate">— {{ p.purpose }}</span>
+                {% endif %}
+              </div>
+              <span class="text-slate-400 text-[10px]">{{ p.updated_at|date:"d/m/Y H:i" }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var tabManual = document.getElementById('tab-manual');
+      var tabPrompt = document.getElementById('tab-prompt');
+      var modeManual = document.getElementById('mode-manual');
+      var modePrompt = document.getElementById('mode-prompt');
+
+      function activate(mode) {
+        if (mode === 'prompt') {
+          modeManual.classList.add('hidden');
+          modePrompt.classList.remove('hidden');
+          tabManual.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+          tabManual.classList.add('text-slate-600');
+          tabPrompt.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+          tabPrompt.classList.remove('text-slate-600');
+        } else {
+          modeManual.classList.remove('hidden');
+          modePrompt.classList.add('hidden');
+          tabManual.classList.add('bg-white', 'shadow-sm', 'text-slate-900');
+          tabManual.classList.remove('text-slate-600');
+          tabPrompt.classList.remove('bg-white', 'shadow-sm', 'text-slate-900');
+          tabPrompt.classList.add('text-slate-600');
+        }
+      }
+
+      if (tabManual && tabPrompt && modeManual && modePrompt) {
+        tabManual.addEventListener('click', function () { activate('manual'); });
+        tabPrompt.addEventListener('click', function () { activate('prompt'); });
+        activate('manual');
+      }
+
+      window.fillNoteForm = function (id, content) {
+        document.getElementById('note-id').value = id || '';
+        document.getElementById('note-content').value = content || '';
+        activate('manual');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+    })();
+  </script>
+</body>
+</html>
+
