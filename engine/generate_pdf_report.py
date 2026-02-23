@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
 Generate PDF report locally and save it for download.
-Run this script to generate the latest report as PDF.
+Run this script to generate the latest report as PDF (EN + FR) in the output folder.
 """
 
 import os
 import sys
 import django
 from datetime import datetime
+from pathlib import Path
 
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'engine.settings.development')
 django.setup()
 
+from django.conf import settings
 from reports.models import WeeklyReport
 
+OUTPUT_DIR_NAME = "output"
+
+
 def generate_latest_report_pdf():
-    """Generate PDF for the latest weekly report."""
+    """Generate PDF for the latest weekly report (EN + FR) and save to output folder."""
     
     print("🔍 Searching for latest report...")
     
@@ -36,20 +41,23 @@ def generate_latest_report_pdf():
     try:
         print("🔄 Generating PDFs (EN + FR)...")
 
+        output_dir = Path(settings.BASE_DIR) / OUTPUT_DIR_NAME
+        output_dir.mkdir(parents=True, exist_ok=True)
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        week_range = f"{latest_report.week_start}_{latest_report.week_end}"
         paths = []
 
         for lang in ("en", "fr"):
             pdf_buffer = latest_report.generate_pdf(lang=lang)
-            filename = f"report_{latest_report.week_start}_{timestamp}_{lang}.pdf"
-            filepath = os.path.join(os.getcwd(), filename)
-            with open(filepath, 'wb') as f:
-                f.write(pdf_buffer.getvalue())
+            filename = f"report_{week_range}_{timestamp}_{lang}.pdf"
+            filepath = output_dir / filename
+            filepath.write_bytes(pdf_buffer.getvalue())
             file_size = len(pdf_buffer.getvalue())
             print(f"  ✅ {lang.upper()}: {filename} ({file_size:,} bytes)")
-            paths.append(filepath)
+            paths.append(str(filepath))
 
-        print(f"📂 Directory: {os.getcwd()}")
+        print(f"📂 Directory: {output_dir.resolve()}")
         return paths
 
     except Exception as e:
@@ -69,11 +77,11 @@ def main():
     
     if pdf_file:
         print("\n" + "=" * 60)
-        print("🎉 SUCCESS! PDF reports are ready for download.")
+        print("🎉 SUCCESS! PDF reports (EN + FR) are in the output folder.")
         print("=" * 60)
         for p in pdf_file:
             print(f"📄 {os.path.basename(p)}")
-        print(f"📂 Location: {os.path.dirname(pdf_file[0])}")
+        print(f"📂 Folder: output ({os.path.dirname(pdf_file[0])})")
         print("\n💡 You can now:")
         print("   • Open the PDFs directly")
         print("   • Email them to stakeholders")

@@ -48,8 +48,10 @@ class WeeklyReport(TimestampedModel):
         return f"Weekly report {self.week_start} – {self.week_end}"
 
     def generate_pdf(self, lang: str = "en"):
-        """Generate PDF report for this weekly report in the given language."""
+        """Generate PDF report for this weekly report in the given language.
+        For French (fr), report body content is translated so the full PDF is in French."""
         from .pdf_generator import ReportPDFGenerator
+        from .translation import translate_report_data_to_french
 
         report_data = {
             'week_start': self.week_start.strftime('%d/%m/%Y'),
@@ -64,6 +66,9 @@ class WeeklyReport(TimestampedModel):
             'project_ideas': self.project_ideas,
             'kpis': self.kpis,
         }
+
+        if lang == "fr":
+            report_data = translate_report_data_to_french(report_data)
 
         generator = ReportPDFGenerator(lang=lang)
         return generator.generate_pdf(report_data)

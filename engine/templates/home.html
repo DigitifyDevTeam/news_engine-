@@ -198,9 +198,13 @@
               </div>
               <div class="flex items-center gap-2">
                 {% if r.signal_count > 0 %}
-                <a href="{% url 'download_report_pdf' r.id %}" 
+                <a href="{% url 'download_report_pdf' r.id %}?lang=en"
                    class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
-                  📄 PDF
+                  📄 PDF (EN)
+                </a>
+                <a href="{% url 'download_report_pdf' r.id %}?lang=fr"
+                   class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                  📄 PDF (FR)
                 </a>
                 {% else %}
                 <span class="inline-flex items-center px-2 py-1 rounded-lg border border-slate-200 text-xs font-medium text-slate-400">
@@ -257,9 +261,9 @@
                   stopPolling();
                   var reportLink = '';
                   if (data.report_id) {
-                    reportLink = '<a href="/reports/' + data.report_id + '/pdf/" class="inline-flex items-center gap-1 px-3 py-1 mt-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700">Telecharger le PDF</a>';
+                    reportLink = '<a href="/reports/' + data.report_id + '/pdf/?lang=en" class="inline-flex items-center gap-1 px-3 py-1 mt-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700">PDF (EN)</a> <a href="/reports/' + data.report_id + '/pdf/?lang=fr" class="inline-flex items-center gap-1 px-3 py-1 mt-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700">PDF (FR)</a> ';
                   }
-                  msg.innerHTML = '<span class="text-green-600 font-medium">Pipeline termine (' + (data.signals_extracted || 0) + ' signaux)</span>' + bar.replace('bg-blue-600 h-3', 'bg-green-500 h-3') + '<small>' + text + '</small><br>' + reportLink + ' <a href="javascript:location.reload()" class="text-blue-600 underline text-xs ml-2">Actualiser la page</a>';
+                  msg.innerHTML = '<span class="text-green-600 font-medium">Pipeline termine (' + (data.signals_extracted || 0) + ' signaux)</span>' + bar.replace('bg-blue-600 h-3', 'bg-green-500 h-3') + '<small>' + text + '</small><br>PDFs dans le dossier <strong>output</strong> · ' + reportLink + ' <a href="javascript:location.reload()" class="text-blue-600 underline text-xs ml-2">Actualiser la page</a>';
                   btn.disabled = false;
                 } else if (runStatus === 'failed') {
                   stopPolling();
